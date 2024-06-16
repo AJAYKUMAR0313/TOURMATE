@@ -36,20 +36,21 @@ app.all('*', (req, res, next) => {
   //   status: 'fail',
   //   message: `cant find ${req.originalUrl} on the server!`,
   // });
-  const err=new Error()
-  
+  const err = new Error(`cant find ${req.originalUrl} on the server!`);
+  err.status = 'fail';
+  err.statusCode = 404;
+
+  next(err);
 });
 
-app.use((err,req,res,next)=>{
-  err.statusCode=err.statusCode||500;
-  err.status=err.status||'error'
+app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
 
   res.status(err.statusCode).json({
-    stats:err.status,
-    messgae=err.message
-  })
-})
-
+    stats: err.status,
+    message: err.message,
+  });
+});
 
 module.exports = app;
-
