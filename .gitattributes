@@ -1,6 +1,3 @@
-# Mark all files as detectable
-* linguist-detectable=true
-
 # Explicitly set the language for certain file types
 *.html linguist-language=HTML
 *.css linguist-language=CSS
