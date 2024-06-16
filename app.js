@@ -32,10 +32,24 @@ app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
 app.all('*', (req, res, next) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `cant find ${req.originalUrl} on the server!`,
-  });
+  // res.status(404).json({
+  //   status: 'fail',
+  //   message: `cant find ${req.originalUrl} on the server!`,
+  // });
+  const err=new Error()
+  
 });
 
+app.use((err,req,res,next)=>{
+  err.statusCode=err.statusCode||500;
+  err.status=err.status||'error'
+
+  res.status(err.statusCode).json({
+    stats:err.status,
+    messgae=err.message
+  })
+})
+
+
 module.exports = app;
+
