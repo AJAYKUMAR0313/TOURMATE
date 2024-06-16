@@ -1,0 +1,21 @@
+OPERATIONAL ERRORS
+->problems that we can predict will happen at some point,so wee just need to handle them in advance
+ex:
+->invalid path accessed
+->invalid user input
+->failed to connect to the server
+->failed to connect the db
+->request timeout
+
+we use GLOBAL ERROR HANDLING MIDDLEWARE to catch all ther errors
+
+
+PROGRAMMING ERRORS
+->Bugs that we developers introduce into our code.Difficult to find and handle
+ex:
+->reading properties on undefined
+->using await without async
+->passing a number where object is expected
+->using request.query instead of req.body
+
+
