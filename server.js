@@ -10,8 +10,10 @@ const DB = process.env.DATABASE.replace(
   '<PASSWORD>',
   process.env.DATABASE_PASSWORD,
 );
+//UNHANDLED PROMISE REJECTION(INVALID DATABASE HANDLING)
 
 mongoose.connect(DB).then(() => console.log('DB connection successfull'));
+// .catch((err) => console.log('ERROR'));
 
 // const tourSchema=new mongoose.Schema({
 //   name:{
@@ -46,6 +48,22 @@ mongoose.connect(DB).then(() => console.log('DB connection successfull'));
 // console.log(app.get('env'));
 // console.log(process.env);
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.log(err.name, err.message);
+  console.log('UNHANDLED REJECTION! Shutting down');
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  console.log('UNHANDLED EXCEPTION! Shutting down');
+  console.log(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
 });

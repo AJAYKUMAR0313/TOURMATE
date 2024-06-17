@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-const validator = require('validator');
+// const validator = require('validator');
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const slugify = require('slugify');
