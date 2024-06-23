@@ -12,6 +12,7 @@ const {
 } = require('../controllers/userController');
 
 router.post('/signup', authController.signup);
+router.post('/login', authController.login);
 
 router.route('/').get(getAllUsers).post(createUser);
 
