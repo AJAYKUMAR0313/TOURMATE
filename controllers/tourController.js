@@ -76,7 +76,7 @@ exports.getAllTours = catchAsync(async (req, res) => {
     .sort()
     .limitFields()
     .pagination();
-  console.log('Final Query:', features.query);
+  // console.log('Final Query:', features.query);
   const tours = await features.query;
 
   //SEND RESPONSE
