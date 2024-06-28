@@ -19,3 +19,5 @@ ex:
 ->using request.query instead of req.body
 
 
+node dev-data/data/import-dev-data --delete
+node dev-data/data/import-dev-data --import
