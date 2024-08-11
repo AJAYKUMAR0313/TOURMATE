@@ -16,6 +16,7 @@ const tourSchema = new mongoose.Schema(
       trim: true,
       maxlength: [40, 'Only 40 characters allowed'],
       minlength: [10, 'more or equal than 10 ch'],
+  
       // validate:validator.isAlpha
     },
     slug: String,
@@ -141,3 +142,4 @@ tourSchema.pre('aggregate', function (next) {
 const Tour = mongoose.model('Tour', tourSchema);
 
 module.exports = Tour;
+
