@@ -11,27 +11,40 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-exports.signup = catchAsync(async (req, res, next) => {
-  const newUser = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    passwordChangedAt: req.body.passwordChangedAt,
-    role: req.body.role,
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  // console.log(token);
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user: user,
+    },
   });
-  const token = signToken(newUser._id);
+};
+exports.signup = catchAsync(async (req, res, next) => {
+  // const newUser = await User.create({
+  //   name: req.body.name,
+  //   email: req.body.email,
+  //   password: req.body.password,
+  //   passwordConfirm: req.body.passwordConfirm,
+  //   passwordChangedAt: req.body.passwordChangedAt,
+  //   role: req.body.role,
+  // });
+  const newUser = await User.create(req.body);
+  createSendToken(newUser, 201, res);
+  // const token = signToken(newUser._id);
   // const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
   //   expiresIn: process.env.JWT_EXPIRES_IN,
   // });
 
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  // res.status(201).json({
+  //   status: 'success',
+  //   token,
+  //   data: {
+  //     user: newUser,
+  //   },
+  // });
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -50,15 +63,41 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   //3)if everything is ok send token to the client
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  // const token = signToken(user._id);
+  // res.status(200).json({
+  //   status: 'success',
+  //   token,
+  // });
+  createSendToken(user, 200, res);
 });
+// DESCRIPTION FOR PROTECT:{
+// This code is a middleware function in Node.js that is designed to protect certain routes by checking if the user is authenticated and authorized to access them. Let's break down the code step by step:
 
+// Token Retrieval and Existence Check:
+
+// The code first tries to extract the JWT token from the request headers.
+// It checks if the token exists and starts with 'Bearer'.
+// If the token doesn't exist, it returns an error using the AppError class with a message "You are not logged in please login to get access" and a status code of 401 (Unauthorized).
+// Token Verification:
+
+// Next, it verifies the token by using jwt.verify function, which decodes the JWT token by passing the token and a secret key stored in the environment variable (JWT_SECRET).
+// The decoded token information is stored in the decoded variable.
+// Existing User Check:
+
+// It then tries to find the user associated with the decoded token's ID by using User.findById (assuming User is a model for users).
+// If no user is found with the decoded ID, it returns an error with a message "The user belonging to this token does no longer exist" and a status code of 401.
+// Password Change Check:
+
+// It checks if the user changed their password after the token was issued. If the password was changed after the token's issue time (decoded.iat), it returns an error with the message "User recently changed password! Please log in again" and a status code of 401.
+// Granting Access:
+
+// If all the checks pass successfully, it assigns the currentUser to req.user to make the user available for further processing in subsequent middleware or route handlers.
+// It then calls next() to pass control to the next middleware in the chain.
+// In summary, this middleware function protects routes by ensuring that the user is authenticated with a valid JWT token, the user exists in the database, and the password has not been changed after issuing the token. If any of these conditions are not met, it returns an error response. If all checks are successful, it allows the user to access the protected route.
 exports.protect = catchAsync(async (req, res, next) => {
   //1} getting token and check if its exists
+  console.log('Request headers:', req.headers); // Add this line to log the request headers
+
   let token;
   if (
     req.headers.authorization &&
@@ -66,7 +105,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
-  // console.log(token);
+  console.log('token', token);
   if (!token) {
     return next(
       new AppError('You are not logged in please login to get access', 401),
@@ -186,9 +225,30 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   //3) update changePasswordAt property for the user
 
   //4) log in the user and send JWT
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  // const token = signToken(user._id);
+  // res.status(200).json({
+  //   status: 'success',
+  //   token,
+  // });
+  createSendToken(user, 200, res);
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  //1) Get the user from collection
+  const user = await User.findById(req.user.id).select('+password');
+  //2) CHeck if posted current password is correct
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(new AppError('Your Current Password is Wrong.', 401));
+  }
+  //3) If so,update Password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  //4) Log user in ,send JWT
+  // const token = signToken(user._id);
+  // res.status(200).json({
+  //   status: 'success',
+  //   token,
+  // });
+  createSendToken(user, 200, res);
 });
