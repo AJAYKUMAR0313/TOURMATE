@@ -5,6 +5,10 @@ const slugify = require('slugify');
 
 const tourSchema = new mongoose.Schema(
   {
+    distance: {
+      type: Number,
+      default: 0,
+    },
     name: {
       type: String,
       required: [true, 'A tour must have a name'],
@@ -121,6 +125,7 @@ const tourSchema = new mongoose.Schema(
 // tourSchema.index({price:1})
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 // // tourSchema.index({ price: 1 });
 // tourSchema.index({ price: 1, ratingsAverage: -1 });
