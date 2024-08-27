@@ -1,3 +1,4 @@
+/* eslint-disable arrow-body-style */
 const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
@@ -6,32 +7,47 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const sendEmail = require('../utils/email');
 
-const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, {
+// eslint-disable-next-line arrow-body-style
+const signToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
-
+};
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
+  console.log('Generated token:', token); // Log the token to the console
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    secure:true,
+    httpOnly: true,
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
   // console.log(token);
+  // remove the password from the output
+  user.password = undefined;
+
   res.status(statusCode).json({
     status: 'success',
-    token,
+    token: token,
     data: {
-      user: user,
+      user,
     },
   });
 };
 exports.signup = catchAsync(async (req, res, next) => {
-  // const newUser = await User.create({
-  //   name: req.body.name,
-  //   email: req.body.email,
-  //   password: req.body.password,
-  //   passwordConfirm: req.body.passwordConfirm,
-  //   passwordChangedAt: req.body.passwordChangedAt,
-  //   role: req.body.role,
-  // });
-  const newUser = await User.create(req.body);
+  const newUser = await User.create({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm,
+    passwordChangedAt: req.body.passwordChangedAt,
+    role: req.body.role,
+  });
+  // const newUser = await User.create(req.body);
   createSendToken(newUser, 201, res);
   // const token = signToken(newUser._id);
   // const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
@@ -95,9 +111,9 @@ exports.login = catchAsync(async (req, res, next) => {
 // It then calls next() to pass control to the next middleware in the chain.
 // In summary, this middleware function protects routes by ensuring that the user is authenticated with a valid JWT token, the user exists in the database, and the password has not been changed after issuing the token. If any of these conditions are not met, it returns an error response. If all checks are successful, it allows the user to access the protected route.
 exports.protect = catchAsync(async (req, res, next) => {
-  //1} getting token and check if its exists
-  console.log('Request headers:', req.headers); // Add this line to log the request headers
-
+  // 1} getting token and check if its exists
+  // console.log('Request headers:', req.headers); // Add this line to log the request headers
+  // console.log('hello');
   let token;
   if (
     req.headers.authorization &&
@@ -114,10 +130,12 @@ exports.protect = catchAsync(async (req, res, next) => {
   //2) verification token
 
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
   // console.log(decoded);
 
   //3)Check if user still exists
   const currentUser = await User.findById(decoded.id);
+  // console.log(currentUser);
   if (!currentUser) {
     return next(
       new AppError(
@@ -137,19 +155,19 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-exports.restrictTo =
-  (...roles) =>
-  (req, res, next) => {
-    //roles ['admin','lead-guide'].role='user'
-    // console.log('Roles allowed:', roles);
-    // console.log('User role:', req.user.role);
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles ['admin', 'lead-guide']role='user'
+    console.log(req.user.role);
     if (!roles.includes(req.user.role)) {
       return next(
         new AppError('You do not have permission to perform this action', 403),
       );
     }
+
     next();
   };
+};
 
 // Here's a simplified summary of what's going on in this lecture:
 
