@@ -1,12 +1,15 @@
 header.header
   nav.nav.nav--tours
-    a.nav__el(href='#') All tours
+    a.nav__el(href='/') All tours
   .header__logo
-    img(src='img/logo-white.png' alt='TourMate logo')
+    img(src='/img/logo-white.png' alt='TourMate logo')
   nav.nav.nav--user 
-    //- a.nav__el(href='#') My bookings
-    //- a.nav__el(href='#')
-    //-   img.nav__user-img(src='img/user.jpg' alt='User photo')
-    //-   span Ajay
-  button.nav__el Login
-  button.nav__el.nav__el--cta Sign up
+    if user
+      a.nav__el.nav__el--logout Logout
+      a.nav__el(href='/me')
+        img.nav__user-img(src=`/img/users/${user.photo}` alt=`Photo of ${user.name}`)
+        span= user.name.split(' ')[0]
+    else
+      a.nav__el(href= '/login') Login
+      a.nav__el.nav__el--cta(href= '#') Sign up
+      

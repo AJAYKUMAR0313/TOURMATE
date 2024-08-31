@@ -20,7 +20,7 @@ const createSendToken = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
     ),
-    secure:true,
+    secure: true,
     httpOnly: true,
   };
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
@@ -86,6 +86,14 @@ exports.login = catchAsync(async (req, res, next) => {
   // });
   createSendToken(user, 200, res);
 });
+
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({ status: 'success' });
+};
 // DESCRIPTION FOR PROTECT:{
 // This code is a middleware function in Node.js that is designed to protect certain routes by checking if the user is authenticated and authorized to access them. Let's break down the code step by step:
 
@@ -120,6 +128,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
   console.log('token', token);
   if (!token) {
@@ -152,8 +162,35 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   //grant access to the protected route
   req.user = currentUser;
+  res.locals.user = currentUser;
   next();
 });
+// /only for render pages
+exports.isLoggedIn = async (req, res, next) => {
+  if (req.cookies.jwt) {
+    // 1 ) Verify token
+    try {
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET,
+      );
+      //2)Check if user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+      //3) Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) return next();
+      //grant access to the protected route
+      //There is a login user
+      res.locals.user = currentUser;
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
+  next();
+};
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {

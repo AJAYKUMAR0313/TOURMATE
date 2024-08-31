@@ -6,6 +6,7 @@ node_modules/
 
 # Ignore environment variables file
 config.env
+.cache
 
 # Ignore build output directories
 dist/
